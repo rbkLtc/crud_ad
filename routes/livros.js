@@ -1,55 +1,144 @@
 const express = require('express');
 const router = express.Router();
+const mysql = require('../mysql').pool;
 
 //insere
 router.post ('/', (req, res, next) =>{
-    
-    const livro = {
-        nome: req.body.nome,
-        ano: req.body.ano
-    };
-    
-    res.status(201).send({
-        mensagem: 'insere',
-        livroCriado: livro
+    mysql.getConnection((error, conn) => {
+        if (error) {return res.status(500).send({ error: error})}
+        conn.query(
+            'INSERT INTO livros (titulo, autor, descric, preco, categ) VALUES (?,?,?,?,?)',
+            [req.body.titulo, req.body.autor, req.body.descric, req.body.preco, req.body.categ],
+            (error, result, field) => {
+                conn.release();
+                if (error) {return res.status(500).send({ error: error})}
+                const response = {
+                    mensagem: 'Menino livro inserido e nois familia',
+                    livroInserido: {
+                            id_livro: result.id_livros,
+                            titulo: req.body.titulo,
+                            autor: req.body.autor,
+                            descricao:  req.body.descric,
+                            preco: req.body.preco,
+                            categoria: req.body.categ
+                        }
+                    }
+                return res.status(200).send(response)
+            }
+        )
     });
 });
 
 //retorna *
 router.get ('/', (req, res, next) =>{
-    res.status(200).send({
-        mensagem: 'retorna all *'
+    mysql.getConnection((error, conn) => {
+        if (error) {return res.status(500).send({ error: error})}
+        conn.query(
+            'SELECT * FROM livros;',
+            (error, result, fields) => {
+                if (error) {return res.status(500).send({ error: error})}
+                const response = {
+                    quantidade: result.length,
+                    livros: result.map(liv =>{
+                        return {
+                            id_livro: liv.id_livros,
+                            titulo: liv.titulo,
+                            autor: liv.autor,
+                            descricao:  liv.descric,
+                            preco: liv.preco,
+                            categoria: liv.categ
+                        }
+                    })
+                }
+                return res.status(200).send({response: result})
+            }
+        )
+    })
+});
+
+
+//retorna 1
+router.get ('/:id_livros', (req, res, next) =>{
+    mysql.getConnection((error, conn) => {
+        if (error) {return res.status(500).send({ error: error})}
+        conn.query(
+            'SELECT * FROM livros WHERE id_livros = ?;',
+            [req.params.id_livros],
+            (error, result, fields) => {
+                if (error) {return res.status(500).send({ error: error})}
+
+                if (result.length == 0) {
+                    return res.status(404).send({
+                        mensagem: 'O id inserido é invalido muyTriste.'
+                    })
+                }
+                const response = {
+                    livro: {
+                        id_livro: result[0].id_livros,
+                        titulo: result[0].body.titulo,
+                        autor: result[0].body.autor,
+                        descricao:  result[0].body.descric,
+                        preco: result[0].body.preco,
+                        categoria: result[0].body.categ
+                    }
+                }
+                return res.status(200).send(response);
+            }
+        )
     });
 });
 
-//retorna 1
-router.get ('/:id_livro', (req, res, next) =>{
-    const id = req.params.id_livro;
-
-    if(id === 'a'){
-        res.status(200).send({
-            mensagem: 'retorna por id sendo id igual a A',
-            id: id
-        });
-    }else{
-        res.status(200).send({
-            mensagem: 'id dif d A'
-        });
-    }
-});
-
 //altera
-router.post ('/', (req, res, next) =>{
-    res.status(201).send({
-        mensagem: 'altera'
+router.patch('/', (req, res, next) =>{
+    mysql.getConnection((error, conn) => {
+        if (error) {return res.status(500).send({ error: error})}
+        conn.query(
+            `UPDATE livros 
+                SET 
+                    titulo = ?,
+                    autor = ?,
+                    descric = ?,
+                    preco = ?,
+                    categ = ?
+                WHERE id_livros = ?`,            
+            [
+                req.body.titulo, 
+                req.body.autor, 
+                req.body.descric, 
+                req.body.preco,
+                req.body.categ, 
+                req.body.id_livros
+            ],
+            (error, result, field) => {
+                conn.release();
+                if (error) {return res.status(500).send({ error: error})}
+
+                res.status(202).send ({
+                    mensagem: 'Alterado o menino livro com tranquilidade'
+                });
+            }
+        )
     });
 });
 
 //delete
-router.post ('/', (req, res, next) =>{
-    res.status(201).send({
-        mensagem: 'deleta'
+router.delete('/', (req, res, next) =>{
+    mysql.getConnection((error, conn) => {
+        if (error) {return res.status(500).send({ error: error})}
+        conn.query(
+            'DELETE FROM livros WHERE id_livros = ?',            
+            [req.body.id_livros],
+            (error, resultado, field) => {
+                conn.release();
+                if (error) {return res.status(500).send({ error: error})}
+
+                res.status(201).send ({
+                    mensagem: 'deletado o menino livro com success'
+                });
+            }
+        )
     });
 });
 
 module.exports = router;
+
