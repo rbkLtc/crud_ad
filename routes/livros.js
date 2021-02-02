@@ -75,11 +75,11 @@ router.get ('/:id_livros', (req, res, next) =>{
                 const response = {
                     livro: {
                         id_livro: result[0].id_livros,
-                        titulo: result[0].body.titulo,
-                        autor: result[0].body.autor,
-                        descricao:  result[0].body.descric,
-                        preco: result[0].body.preco,
-                        categoria: result[0].body.categ
+                        titulo: result[0].titulo,
+                        autor: result[0].autor,
+                        descricao:  result[0].descric,
+                        preco: result[0].preco,
+                        categoria: result[0].categ
                     }
                 }
                 return res.status(200).send(response);
